@@ -1,40 +1,44 @@
+#---------------------------------------------------------------------------------
 .SUFFIXES:
+#---------------------------------------------------------------------------------
 
 ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
-TOPDIR 		?= 	$(CURDIR)
+export TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
-TARGET		:= 	$(notdir $(CURDIR))
-PLGINFO 	:= 	$(notdir $(TOPDIR)).plgInfo
+CTRPFLIB	?=	$(TOPDIR)/libctrpf
 
-BUILD		:= 	Build
-INCLUDES	:= 	Includes
-LIBDIRS		:= 	$(TOPDIR)
-SOURCES 	:= 	Sources
-IP			:=  5
-FTP_HOST 	:=	192.168.1.
-FTP_PORT	:=	"5000"
-FTP_PATH	:=	"luma/plugins/"
+TARGET		:= 	sevenstar
+INCLUDES	:= 	include \
+				include/lodepng
+
+SOURCES 	:= 	src
+
+PSF 		:= 	plginfo.txt
+
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH		:=	-march=armv6k -mlittle-endian -mtune=mpcore -mfloat-abi=hard -mtp=soft
+ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS		:=	-Os -mword-relocations \
-				-fomit-frame-pointer -ffunction-sections -fno-strict-aliasing \
-				$(ARCH)
+CFLAGS	:=	-mword-relocations \
+ 			-ffunction-sections -fdata-sections -fno-strict-aliasing \
+			$(ARCH) $(BUILD_FLAGS) $(G)
 
-CFLAGS		+=	$(INCLUDE) -DARM11 -D_3DS 
+CFLAGS		+=	$(INCLUDE) -D__3DS__ $(DEFINES)
+
+#-Wall -Wextra -Wdouble-promotion -Werror
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
-ASFLAGS		:= $(ARCH)
-LDFLAGS		:= -T $(TOPDIR)/3gx.ld $(ARCH) -Os -Wl,--gc-sections,--strip-discarded,--strip-debug
+ASFLAGS		:= $(ARCH) $(G)
+LDFLAGS		:= -T $(TOPDIR)/3gx.ld $(ARCH) -Os -Wl,$(WL)--gc-sections,--section-start,.text=0x07000100 #-specs=3dsx.specs
 
-LIBS		:= -lCTRPluginFramework
+LIBS 		:=  $(BUILD_LIBS) -lm
+LIBDIRS		:= 	$(CTRPFLIB) $(CTRULIB) $(PORTLIBS)
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -42,9 +46,6 @@ LIBS		:= -lCTRPluginFramework
 #---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
-
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
-export TOPDIR	:=	$(CURDIR)
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
 
@@ -53,49 +54,66 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-#	BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 
 export LD 		:= 	$(CXX)
 export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I $(CURDIR)/$(dir) ) \
-					$(foreach dir,$(LIBDIRS),-I $(dir)/include) \
-					-I $(CURDIR)/$(BUILD)
+
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+					-I$(CURDIR)/$(BUILD)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L $(dir)/lib)
 
-.PHONY: $(BUILD) re clean all install send
+.PHONY: $(BUILD) libctrpf clean re relink all
 
 #---------------------------------------------------------------------------------
-all: $(BUILD)
+all: libctrpf $(TARGET).3gx
 
-$(BUILD):
+libctrpf:
+	cd libctrpf && make lib/libctrpf.a -j8 \
+	&& make lib/libctrpf.a && cd ..
+
+release:
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+
+debugdir:
+	@[ -d $@ ] || mkdir -p $@
+
+debug: debugdir $(TARGET)-debug.3gx
+
+$(TARGET).3gx : release
+	@$(MAKE) BUILD=release OUTPUT=$(CURDIR)/$@ BUILD_LIBS="-lctrpf -lctru" WL=--strip-discarded,--strip-debug, \
+	BUILD_CFLAGS="-DNDEBUG=1 -O2 -fomit-frame-pointer" DEPSDIR=$(CURDIR)/release \
+	--no-print-directory -C release	-f $(CURDIR)/Makefile
+
+$(TARGET)-debug.3gx : debug
+	@$(MAKE) BUILD=debug OUTPUT=$(CURDIR)/$@ BUILD_LIBS="-lctrpfd -lctrud" BUILD_CFLAGS="-DDEBUG=1 -Og" G=-g \
+	DEPSDIR=$(CURDIR)/debug --no-print-directory -C debug -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@-rm -fr $(BUILD) $(OUTPUT).3gx
+	@rm -fr release debug *.elf *.3gx
 
 re: clean all
 
-
-send:
-	@echo "Sending plugin over FTP"
-	@$(CURDIR)/sendfile.py $(TARGET).3gx $(FTP_PATH) "$(FTP_HOST)$(IP)" $(FTP_PORT)
-
+relink:
+	@rm *.elf *.3gx
+	@$(MAKE)
 
 #---------------------------------------------------------------------------------
 
 else
 
-DEPENDS	:=	$(OFILES:.o=.d)
-
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-$(OUTPUT).3gx : $(OFILES)
 
+DEPENDS	:=	$(OFILES:.o=.d)
+
+
+$(OUTPUT) : $(basename $(OUTPUT)).elf
+$(basename $(OUTPUT)).elf : $(OFILES)
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
 #---------------------------------------------------------------------------------
@@ -107,9 +125,10 @@ $(OUTPUT).3gx : $(OFILES)
 #---------------------------------------------------------------------------------
 %.3gx: %.elf
 	@echo creating $(notdir $@)
-	@"$(TOPDIR)/3gxtool.exe" -s $(OUTPUT).elf $(TOPDIR)/$(PLGINFO) $@
+	@3gxtool -s $^ $(TOPDIR)/$(PSF) $@
 
 -include $(DEPENDS)
 
 #---------------------------------------------------------------------------------------
 endif
+#---------------------------------------------------------------------------------------
