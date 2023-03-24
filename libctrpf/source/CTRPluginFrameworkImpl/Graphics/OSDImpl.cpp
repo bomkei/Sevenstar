@@ -561,12 +561,20 @@ static u8 *memsearch(u8 *startPos, const void *pattern, u32 size,
 
 static u32 SearchStmfd(u32 start, u32 size, u32 stmfd)
 {
-  for (size += start; start < size; start++) {
-    if (*(u32 *)start == stmfd)
-      return start;
+  if (!start || !size || !stmfd)
+    return (0);
+
+  u32 result = 0;
+  u32 *end = (u32 *)(start - size);
+
+  for (u32 *addr = (u32 *)start; addr > end; addr--) {
+    if (*addr == stmfd) {
+      result = (u32)addr;
+      break;
+    }
   }
 
-  return 0;
+  return result;
 }
 
 static u32 SearchOSD(u32 pattern)

@@ -9,7 +9,7 @@ endif
 export TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
-CTRPFLIB	?=	$(TOPDIR)/libctrpf
+CTRPFLIB	:=	$(TOPDIR)/libctrpf
 
 TARGET		:= 	sevenstar
 INCLUDES	:= 	include \
@@ -67,7 +67,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L $(dir)/lib)
 .PHONY: $(BUILD) libctrpf clean re relink all
 
 #---------------------------------------------------------------------------------
-all: libctrpf $(TARGET).3gx
+all: $(TARGET).3gx
 
 libctrpf:
 	cd libctrpf && make lib/libctrpf.a -j8 \

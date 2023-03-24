@@ -1,0 +1,7 @@
+/release
+
+*.3gx
+*.elf
+*.lst
+
+*.log
