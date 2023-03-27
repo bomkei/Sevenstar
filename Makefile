@@ -32,7 +32,7 @@ CFLAGS		+=	$(INCLUDE) -D__3DS__ $(DEFINES)
 
 #-Wall -Wextra -Wdouble-promotion -Werror
 
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++20
 
 ASFLAGS		:= $(ARCH) $(G)
 LDFLAGS		:= -T $(TOPDIR)/3gx.ld $(ARCH) -Os -Wl,$(WL)--gc-sections,--section-start,.text=0x07000100 #-specs=3dsx.specs
@@ -69,9 +69,10 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L $(dir)/lib)
 #---------------------------------------------------------------------------------
 all: $(TARGET).3gx
 
-libctrpf:
+lib:
 	cd libctrpf && make lib/libctrpf.a -j8 \
 	&& make lib/libctrpf.a && cd ..
+	$(MAKE) relink
 
 release:
 	@[ -d $@ ] || mkdir -p $@

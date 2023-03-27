@@ -561,20 +561,14 @@ static u8 *memsearch(u8 *startPos, const void *pattern, u32 size,
 
 static u32 SearchStmfd(u32 start, u32 size, u32 stmfd)
 {
-  if (!start || !size || !stmfd)
-    return (0);
+  stmfd |= 0xE92D0000;
 
-  u32 result = 0;
-  u32 *end = (u32 *)(start - size);
-
-  for (u32 *addr = (u32 *)start; addr > end; addr--) {
-    if (*addr == stmfd) {
-      result = (u32)addr;
-      break;
-    }
+  for (size = start - size; start > size; start -= 4) {
+    if (*(u32 *)start == stmfd)
+      return start;
   }
 
-  return result;
+  return 0;
 }
 
 static u32 SearchOSD(u32 pattern)
@@ -609,9 +603,9 @@ static u32 SearchOSD(u32 pattern)
 // TODO: clean
 void InstallOSD(void)
 {
-  const u32 stmfd1 = 0xE92D5FF0;  // STMFD SP!, {R4-R12, LR}
-  const u32 stmfd2 = 0xE92D47F0;  // STMFD SP!, {R4-R10, LR}
-  const u32 stmfd3 = 0xE92D4070;  // STMFD SP!, {R4-R6, LR}
+  const u16 stmfd1 = 0x5FF0;  // STMFD SP!, {R4-R12, LR}
+  const u16 stmfd2 = 0x47F0;  // STMFD SP!, {R4-R10, LR}
+  const u16 stmfd3 = 0x4070;  // STMFD SP!, {R4-R6, LR}
 
   u32 found = SearchOSD(0);
   u32 found2 = 0;

@@ -4,13 +4,18 @@
 #include "3ds.h"
 #include <math.h>
 #include <vector>
+#include "helpers.h"
 
 namespace CTRPluginFramework {
 using StringVector = std::vector<std::string>;
 u32 offset = 0, data = 0;
 static u32 original_speed[0x2D];
 
-/////////////////////////////////////////////////////////    Start of custom functions
+static PointerReader reader;
+
+/////////////////////////////////////////////////////////    Start
+/// of
+/// custom functions
 ////////////////////////////////////////////////////////////
 
 /*void	dumpFrames(MenuEntry *entry)
@@ -27,7 +32,8 @@ static u32 original_speed[0x2D];
       *(unsigned int)(0x18000000 + (4 * x) + (4 * y)) = c.ToU32();
     }
   }
-  if (dir.OpenFile(file, "frame" + to_string(frame) + ".bmp", File::RWC) == 0)
+  if (dir.OpenFile(file, "frame" + to_string(frame) + ".bmp",
+File::RWC) == 0)
   {
     file.Dump(0x18000000, 384000);
     frame++;
@@ -41,20 +47,38 @@ bool is_in_range(u32 value, u32 lowerbound, u32 upperbound)
 
 bool IsInRace()
 {
-  if (Process::Read32(0x14000084, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-    if (Process::Read32(offset + 0x316C, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-      return Process::Read32(offset + 0x118, offset) && (offset & 0xFF);
+  if (Process::Read32(0x14000084, offset) &&
+      is_in_range(offset, 0x14000000, 0x18000000))
+    if (Process::Read32(offset + 0x316C, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000))
+      return Process::Read32(offset + 0x118, offset) &&
+             (offset & 0xFF);
   return 0;
 }
 
 u32 GetRacePointer()
 {
+  if (IsInRace() && reader.reset()
+                      .read(0x140002f4)
+                      .add(0x14)
+                      .add(0x518)
+                      .add(0x1c)
+                      .ok)
+    return reader.offs;
+
+  /*
   if (IsInRace())
-    if (Process::Read32(0x140002F4, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-      if (Process::Read32(offset + 0x14, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-        if (Process::Read32(offset + 0x518, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-          if (Process::Read32(offset + 0x1C, offset) && is_in_range(offset, 0x14000000, 0x18000000))
+    if (Process::Read32(0x140002F4, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000))
+      if (Process::Read32(offset + 0x14, offset) &&
+          is_in_range(offset, 0x14000000, 0x18000000))
+        if (Process::Read32(offset + 0x518, offset) &&
+            is_in_range(offset, 0x14000000, 0x18000000))
+          if (Process::Read32(offset + 0x1C, offset) &&
+              is_in_range(offset, 0x14000000, 0x18000000))
             return offset;
+  */
+
   return 0;
 }
 
@@ -70,7 +94,8 @@ u32 GetOldPointer5CC()
 {
   if (IsInRace() && Process::Read32(0xFFFFBF4, offset) &&
       is_in_range(offset, 0x14000000, 0x18000000))
-    if (Process::Read32(offset + 0x5CC, offset) && is_in_range(offset, 0x14000000, 0x18000000))
+    if (Process::Read32(offset + 0x5CC, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000))
       return offset;
   return 0;
 }
@@ -79,7 +104,8 @@ u32 GetOldPointer5D0()
 {
   if (IsInRace() && Process::Read32(0xFFFFBF4, offset) &&
       is_in_range(offset, 0x14000000, 0x18000000))
-    if (Process::Read32(offset + 0x5D0, offset) && is_in_range(offset, 0x14000000, 0x18000000))
+    if (Process::Read32(offset + 0x5D0, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000))
       return offset;
   return 0;
 }
@@ -88,8 +114,10 @@ u32 GetItemPointer()
 {
   if (IsInRace() && Process::Read32(0x14000074, offset) &&
       is_in_range(offset, 0x14000000, 0x18000000))
-    if (Process::Read32(offset - 0x1B5C, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-      if (Process::Read32(offset + 0x27AC, offset) && is_in_range(offset, 0x14000000, 0x18000000))
+    if (Process::Read32(offset - 0x1B5C, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000))
+      if (Process::Read32(offset + 0x27AC, offset) &&
+          is_in_range(offset, 0x14000000, 0x18000000))
         return offset;
   return 0;
 }
@@ -97,10 +125,14 @@ u32 GetItemPointer()
 u8 GetTotalPlayers()
 {
   u8 total;
-  if (Process::Read32(0x14000074, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-    if (Process::Read32(offset - 0xC10, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-      if (Process::Read32(offset + 0x23C, offset) && is_in_range(offset, 0x14000000, 0x18000000))
-        if (Process::Read8(offset - 0xF28, total) && is_in_range(offset, 0x14000000, 0x18000000))
+  if (Process::Read32(0x14000074, offset) &&
+      is_in_range(offset, 0x14000000, 0x18000000))
+    if (Process::Read32(offset - 0xC10, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000))
+      if (Process::Read32(offset + 0x23C, offset) &&
+          is_in_range(offset, 0x14000000, 0x18000000))
+        if (Process::Read8(offset - 0xF28, total) &&
+            is_in_range(offset, 0x14000000, 0x18000000))
           return total;
   return 0;
 }
@@ -161,10 +193,13 @@ void writeItem(u32 item)
 void writeSpeed(u32 speed)
 {
   for (int i = 0; i < 0x2D; i++) {
-    if (Process::Read32(0x140002F4, offset) && is_in_range(offset, 0x14000000, 0x18000000) &&
-        Process::Read32(offset - 0xA4, offset) && is_in_range(offset, 0x14000000, 0x18000000)) {
+    if (Process::Read32(0x140002F4, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000) &&
+        Process::Read32(offset - 0xA4, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000)) {
       if (original_speed[2] != speed)
-        Process::Read32((offset - 0x2C3B0) + (i * 4), original_speed[i]);
+        Process::Read32((offset - 0x2C3B0) + (i * 4),
+                        original_speed[i]);
       Process::Write32((offset - 0x2C3B0) + (i * 4), speed);
       Process::Write32((offset - 0x28E90) + (i * 4), speed);
       Process::Write32((offset - 0x1C730) + (i * 4), speed);
@@ -174,25 +209,29 @@ void writeSpeed(u32 speed)
 
 void writeVR(u32 vr)
 {
-  if (Process::Read32(0x663D04, offset) && is_in_range(offset, 0x10000000, 0x18000000))
+  if (Process::Read32(0x663D04, offset) &&
+      is_in_range(offset, 0x10000000, 0x18000000))
     Process::Write32(offset - 0xE30, vr);
 }
 
 void writeLocation(u32 location)
 {
-  if (Process::Read32(0x6673C8, offset) && is_in_range(offset, 0x10000000, 0x18000000))
+  if (Process::Read32(0x6673C8, offset) &&
+      is_in_range(offset, 0x10000000, 0x18000000))
     Process::Write32(offset + 0xF7CC, location);
 }
 
 void writeFlag(u16 flag)
 {
-  if (Process::Read32(0x6673C8, offset) && is_in_range(offset, 0x10000000, 0x18000000)) {
+  if (Process::Read32(0x6673C8, offset) &&
+      is_in_range(offset, 0x10000000, 0x18000000)) {
     Process::Write8(offset + 0xE7CA, flag);
     Process::Write8(offset + 0xF7D0, flag);
   }
 }
 
-/////////////////////////////////////////////////////////    Start of race codes
+/////////////////////////////////////////////////////////    Start of
+/// race codes
 ////////////////////////////////////////////////////////////
 
 void invincible(MenuEntry *entry)
@@ -311,7 +350,8 @@ void zeroTimer(MenuEntry *entry)
 void waterEverywhere(MenuEntry *entry)
 {
   if (IsInRace() && Process::Read32(0x663954, offset) &&
-      is_in_range(offset, 0x14000000, 0x18000000) && Process::Read32(offset + 0x58, offset) &&
+      is_in_range(offset, 0x14000000, 0x18000000) &&
+      Process::Read32(offset + 0x58, offset) &&
       is_in_range(offset, 0x14000000, 0x18000000))
     Process::Write32(offset + 0x420, 0x48000000);
 }
@@ -370,13 +410,20 @@ void stalking(MenuEntry *entry)
     player = 1;
   if (Controller::IsKeyDown(Y) || active) {
     Process::Read32(0x65DA44, cpuPointer);
-    Process::Read32(cpuPointer + 0x209C + (player * 0x44), cpuPointer);
+    Process::Read32(cpuPointer + 0x209C + (player * 0x44),
+                    cpuPointer);
     if (cpuPointer != GetRacePointer() &&
-        is_in_range(player, 0, (GetTotalPlayers() ? GetTotalPlayers() + 1 : 9)) && cpuPointer &&
-        GetRacePointer() && is_in_range(*(u32 *)(cpuPointer + 0x24), 0x37000000, 0xC9000000) &&
-        is_in_range(*(u32 *)(cpuPointer + 0x2C), 0x37000000, 0xC9000000)) {
+        is_in_range(
+          player, 0,
+          (GetTotalPlayers() ? GetTotalPlayers() + 1 : 9)) &&
+        cpuPointer && GetRacePointer() &&
+        is_in_range(*(u32 *)(cpuPointer + 0x24), 0x37000000,
+                    0xC9000000) &&
+        is_in_range(*(u32 *)(cpuPointer + 0x2C), 0x37000000,
+                    0xC9000000)) {
       memcpy((void *)(GetRacePointer()), (void *)(cpuPointer), 0x30);
-      Process::WriteFloat(GetRacePointer() + 0x28, *(float *)(cpuPointer + 0x28) + 40);
+      Process::WriteFloat(GetRacePointer() + 0x28,
+                          *(float *)(cpuPointer + 0x28) + 40);
       return;
     }
     player++;
@@ -387,7 +434,8 @@ void aimbot(MenuEntry *entry)
 {
   u32 g_racePointer = GetRacePointer(), player_pointer = 0;
   static u32 playerID = 0;
-  static const int x = 0, y = 1, z = 2, user = 0, player = 1, difference = 2;
+  static const int x = 0, y = 1, z = 2, user = 0, player = 1,
+                   difference = 2;
   bool in_race = IsInRace();
   static bool held = false, active = false;
   float coordinates[3][3], temp[3];
@@ -410,8 +458,10 @@ void aimbot(MenuEntry *entry)
     if (!active)
       return;
     Process::Read32(0x65DA44, player_pointer);
-    Process::Read32(0x209C + player_pointer + (playerID * 0x44), player_pointer);  // player pointer
-    if (player_pointer == g_racePointer || !is_in_range(player_pointer, 0x16000000, 0x18000000)) {
+    Process::Read32(0x209C + player_pointer + (playerID * 0x44),
+                    player_pointer);  // player pointer
+    if (player_pointer == g_racePointer ||
+        !is_in_range(player_pointer, 0x16000000, 0x18000000)) {
       playerID++;
       return;
     }
@@ -419,18 +469,27 @@ void aimbot(MenuEntry *entry)
         (GetTotalPlayers() == 0 && playerID > 7))
       playerID = 0;
     for (int i = 0; i < 3; i++) {
-      Process::ReadFloat(player_pointer + (i * 4) + 0x24, coordinates[player][i]);
-      Process::ReadFloat(g_racePointer + (i * 4) + 0x24, coordinates[user][i]);
-      coordinates[difference][i] = coordinates[player][i] - coordinates[user][i];
+      Process::ReadFloat(player_pointer + (i * 4) + 0x24,
+                         coordinates[player][i]);
+      Process::ReadFloat(g_racePointer + (i * 4) + 0x24,
+                         coordinates[user][i]);
+      coordinates[difference][i] =
+        coordinates[player][i] - coordinates[user][i];
     }
-    temp[x] =
-      sqrtf((coordinates[difference][x] * coordinates[difference][x]) +
-            (coordinates[difference][z] * coordinates[difference][z]));  // stores XZ hypotenuse
-    temp[y] =
-      sqrtf((coordinates[difference][x] * coordinates[difference][x]) +
-            (coordinates[difference][y] * coordinates[difference][y]));  // stores XY hypotenuse
-    Process::WriteFloat(g_racePointer + 0x18, coordinates[difference][x] / temp[x]);  // works fine
-    Process::WriteFloat(g_racePointer + 0x20, coordinates[difference][z] / temp[x]);  // works fine
+    temp[x] = sqrtf(
+      (coordinates[difference][x] * coordinates[difference][x]) +
+      (coordinates[difference][z] *
+       coordinates[difference][z]));  // stores XZ hypotenuse
+    temp[y] = sqrtf(
+      (coordinates[difference][x] * coordinates[difference][x]) +
+      (coordinates[difference][y] *
+       coordinates[difference][y]));  // stores XY hypotenuse
+    Process::WriteFloat(
+      g_racePointer + 0x18,
+      coordinates[difference][x] / temp[x]);  // works fine
+    Process::WriteFloat(
+      g_racePointer + 0x20,
+      coordinates[difference][z] / temp[x]);  // works fine
   }
 }
 
@@ -469,13 +528,13 @@ void sizeChanger(MenuEntry *entry)
     }
     Process::WriteFloat(GetRacePointer() + 0x100C, PlayerSize);
   }
-  if (!held && in_race && -0.015f < speed && speed < 0.15f && speed != 0.15f &&
-      Controller::IsKeyDown(DPadRight)) {
+  if (!held && in_race && -0.015f < speed && speed < 0.15f &&
+      speed != 0.15f && Controller::IsKeyDown(DPadRight)) {
     held = true;
     speed += 0.01f;
   }
-  if (!held && in_race && -0.015f < speed && speed < 0.15f && speed != -0.15f &&
-      Controller::IsKeyDown(DPadLeft)) {
+  if (!held && in_race && -0.015f < speed && speed < 0.15f &&
+      speed != -0.15f && Controller::IsKeyDown(DPadLeft)) {
     held = true;
     speed -= 0.01f;
   }
@@ -483,7 +542,8 @@ void sizeChanger(MenuEntry *entry)
     held = true;
     speed = 0;
   }
-  if (!Controller::IsKeyDown(DPadRight) && !Controller::IsKeyDown(DPadLeft))
+  if (!Controller::IsKeyDown(DPadRight) &&
+      !Controller::IsKeyDown(DPadLeft))
     held = false;
 }
 
@@ -491,8 +551,9 @@ void TouchCode(MenuEntry *entry)
 {
   u32 g_racePointer = GetRacePointer(), map_pointer = 0;
   bool in_race = IsInRace();
-  if (Process::Read32(0x6789C8, data) && Process::Read32(data + 0x1A48, data) && data == 1 &&
-      in_race && is_in_range(g_racePointer, 0x14000000, 0x18000000)) {
+  if (Process::Read32(0x6789C8, data) &&
+      Process::Read32(data + 0x1A48, data) && data == 1 && in_race &&
+      is_in_range(g_racePointer, 0x14000000, 0x18000000)) {
     unsigned int touch_pointer = *(unsigned int *)0x6789C8;
     float X_Axis = *(float *)(touch_pointer + 0x1BCC);
     float Y_Axis = *(float *)(touch_pointer + 0x1BD0);
@@ -568,7 +629,8 @@ void bulletControl(MenuEntry *entry)
 void disableStarMusic(MenuEntry *entry)
 {
   u8 temp = 0;
-  if (IsInRace() && GetFNsPointer() && Process::Read8(GetFNsPointer() + 0x1F7, temp) && temp == 1)
+  if (IsInRace() && GetFNsPointer() &&
+      Process::Read8(GetFNsPointer() + 0x1F7, temp) && temp == 1)
     Process::Write8(GetFNsPointer() + 0x1F7, 0);
 }
 
@@ -584,14 +646,18 @@ void bulletSpeed(MenuEntry *entry)
 
 void blueShellRide(MenuEntry *entry)
 {
-  u32 dataX = 0, dataY = 0, dataZ = 0, g_racePointer = GetRacePointer();
+  u32 dataX = 0, dataY = 0, dataZ = 0,
+      g_racePointer = GetRacePointer();
   if (IsInRace() && Controller::IsKeyDown(DPadLeft)) {
-    if (Process::Read32(0xFFFFBF4, offset) && is_in_range(offset, 0x14000000, 0x18000000) &&
-        Process::Read32(offset - 0x63C, offset) && is_in_range(offset, 0x14000000, 0x18000000)) {
+    if (Process::Read32(0xFFFFBF4, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000) &&
+        Process::Read32(offset - 0x63C, offset) &&
+        is_in_range(offset, 0x14000000, 0x18000000)) {
       Process::Read32(offset - 0x3CB0, dataX);
       Process::Read32(offset - 0x3CAC, dataY);
       Process::Read32(offset - 0x3CA8, dataZ);
-      if (is_in_range(dataX, 0x10000, 0xD0000000) && is_in_range(dataY, 0x10000, 0xD0000000) &&
+      if (is_in_range(dataX, 0x10000, 0xD0000000) &&
+          is_in_range(dataY, 0x10000, 0xD0000000) &&
           is_in_range(dataZ, 0x10000, 0xD0000000)) {
         Process::Write32(g_racePointer + 0x24, dataX);
         Process::Write32(g_racePointer + 0x28, dataY);
@@ -624,26 +690,34 @@ void itemWheel(MenuEntry *entry)
 void randomItems(MenuEntry *entry)
 {
   u32 number = Utils::Random(0, 0x14);
-  writeItem(number == 0xF || number == 0x10 ? Utils::Random(0, 0xE) : number);
+  writeItem(number == 0xF || number == 0x10 ? Utils::Random(0, 0xE)
+                                            : number);
 }
 
 void trulyRandomItems(MenuEntry *entry)
 {
-  u32 randNumber = Utils::Random(0, 0x14), g_itemPointer = GetItemPointer(), tmp = 0, tmp2 = 0;
+  u32 randNumber = Utils::Random(0, 0x14),
+      g_itemPointer = GetItemPointer(), tmp = 0, tmp2 = 0;
   u16 tmp3 = 0;
   bool in_race = IsInRace(), alreadyGivenItem = false;
   if (randNumber == 0xF || randNumber == 0x10)
     randNumber = Utils::Random(0, 0xE);
-  if (!alreadyGivenItem && in_race && is_in_range(g_itemPointer, 0x14000000, 0x18000000) &&
-      Process::Read32(g_itemPointer + 0x3C, tmp) && is_in_range(tmp, 0, 4) &&
-      Process::Read32(g_itemPointer + 0xC8, tmp2) && tmp2 != 0xFFFFFFFF &&
-      Process::Read32(0x14000074, tmp2) && is_in_range(tmp2, 0x14000000, 0x18000000) &&
-      Process::Read32(tmp2 - 0x1B5C, tmp2) && is_in_range(tmp2, 0x14000000, 0x18000000) &&
+  if (!alreadyGivenItem && in_race &&
+      is_in_range(g_itemPointer, 0x14000000, 0x18000000) &&
+      Process::Read32(g_itemPointer + 0x3C, tmp) &&
+      is_in_range(tmp, 0, 4) &&
+      Process::Read32(g_itemPointer + 0xC8, tmp2) &&
+      tmp2 != 0xFFFFFFFF && Process::Read32(0x14000074, tmp2) &&
+      is_in_range(tmp2, 0x14000000, 0x18000000) &&
+      Process::Read32(tmp2 - 0x1B5C, tmp2) &&
+      is_in_range(tmp2, 0x14000000, 0x18000000) &&
       Process::Read16(tmp2 + 0x882, tmp3) && tmp3 == 1) {
-    if ((randNumber == 7 || randNumber == 0x11 || randNumber == 0x12 || randNumber == 0x13) &&
+    if ((randNumber == 7 || randNumber == 0x11 ||
+         randNumber == 0x12 || randNumber == 0x13) &&
         tmp == 1)
       Process::Write32(g_itemPointer + 0x3C, 3);
-    else if ((randNumber != 7 && randNumber != 0x11 && randNumber != 0x12 && randNumber != 0x13) &&
+    else if ((randNumber != 7 && randNumber != 0x11 &&
+              randNumber != 0x12 && randNumber != 0x13) &&
              tmp == 3)
       Process::Write32(g_itemPointer + 0x3C, 1);
     Process::Write32(g_itemPointer + 0xA8, 3);
@@ -662,43 +736,47 @@ void SetItem(MenuEntry *entry)
     const u8 id;
   };
 
-  static const std::vector<Item> g_items = {{"Banana", 0},
-                                            {"Green Shell", 1},
-                                            {"Red Shell", 2},
-                                            {"Mushroom", 3},
-                                            {"Bom-omb", 4},
-                                            {"Blooper", 5},
-                                            {"Blue Shell", 6},
-                                            {"Triple Mushroom", 7},
-                                            {"Star", 8},
-                                            {"Bullet Bill", 9},
-                                            {"Lightning", 0xA},
-                                            {"Golden Mushroom", 0xB},
-                                            {"Fire Flower", 0xC},
-                                            {"Tanooki Tail", 0xD},
-                                            {"Lucky-7", 0xE},
-                                            {"Triple Bananas", 0x11},
-                                            {"Triple Green Shells", 0x12},
-                                            {"Triple Red Shells", 0x13}};
+  static const std::vector<Item> g_items = {
+    {"Banana", 0},
+    {"Green Shell", 1},
+    {"Red Shell", 2},
+    {"Mushroom", 3},
+    {"Bom-omb", 4},
+    {"Blooper", 5},
+    {"Blue Shell", 6},
+    {"Triple Mushroom", 7},
+    {"Star", 8},
+    {"Bullet Bill", 9},
+    {"Lightning", 0xA},
+    {"Golden Mushroom", 0xB},
+    {"Fire Flower", 0xC},
+    {"Tanooki Tail", 0xD},
+    {"Lucky-7", 0xE},
+    {"Triple Bananas", 0x11},
+    {"Triple Green Shells", 0x12},
+    {"Triple Red Shells", 0x13}};
 
   static StringVector items;
   if (items.empty())
     for (const Item &i : g_items)
       items.push_back(i.name);
-  Keyboard keyboard("Item Hack\n\nSelect which item you'd like to have", items);
+  Keyboard keyboard(
+    "Item Hack\n\nSelect which item you'd like to have", items);
   int choice = keyboard.Open();
   if (choice <= 0x13) {
     writeItem(g_items[choice].id);
   }
 }
 
-/////////////////////////////////////////////////////////    Start of speed codes
+/////////////////////////////////////////////////////////    Start of
+/// speed codes
 ////////////////////////////////////////////////////////////
 
 void instantAcceleration(MenuEntry *entry)
 {
   if (IsInRace() && Controller::IsKeyDown(A) && GetRacePointer() &&
-      Process::Read32(0x140002F4, data) && Process::Read32(data - 0xA4, data) &&
+      Process::Read32(0x140002F4, data) &&
+      Process::Read32(data - 0xA4, data) &&
       Process::Read32(data - 0x2C3B0, data))
     Process::Write32(GetRacePointer() + 0xF2C, data);
 }
@@ -707,7 +785,8 @@ void instantBackAcceleration(MenuEntry *entry)
 {
   float speed;
   if (IsInRace() && Controller::IsKeyDown(B) && GetRacePointer() &&
-      Process::Read32(0x140002F4, data) && Process::Read32(data - 0xA4, data) &&
+      Process::Read32(0x140002F4, data) &&
+      Process::Read32(data - 0xA4, data) &&
       Process::ReadFloat(data - 0x2C3B0, speed))
     Process::WriteFloat(GetRacePointer() + 0xF2C, -1.f * speed);
 }
@@ -723,9 +802,12 @@ void TwoHundredCC(MenuEntry *entry)
   writeSpeed(0x413C0000);
   if (!entry->IsActivated() && original_speed[5] > 0x30000000) {
     for (int i = 0; i < 0x2D; i++) {
-      Process::Write32((offset - 0x2C3B0) + (i * 4), original_speed[i]);
-      Process::Write32((offset - 0x28E90) + (i * 4), original_speed[i]);
-      Process::Write32((offset - 0x1C730) + (i * 4), original_speed[i]);
+      Process::Write32((offset - 0x2C3B0) + (i * 4),
+                       original_speed[i]);
+      Process::Write32((offset - 0x28E90) + (i * 4),
+                       original_speed[i]);
+      Process::Write32((offset - 0x1C730) + (i * 4),
+                       original_speed[i]);
     }
   }
 }
@@ -735,17 +817,22 @@ void FiveHundredCC(MenuEntry *entry)
   writeSpeed(0x41A00000);
   if (!entry->IsActivated() && original_speed[5] > 0x30000000) {
     for (int i = 0; i < 0x2D; i++) {
-      Process::Write32((offset - 0x2C3B0) + (i * 4), original_speed[i]);
-      Process::Write32((offset - 0x28E90) + (i * 4), original_speed[i]);
-      Process::Write32((offset - 0x1C730) + (i * 4), original_speed[i]);
+      Process::Write32((offset - 0x2C3B0) + (i * 4),
+                       original_speed[i]);
+      Process::Write32((offset - 0x28E90) + (i * 4),
+                       original_speed[i]);
+      Process::Write32((offset - 0x1C730) + (i * 4),
+                       original_speed[i]);
     }
   }
 }
 
-/////////////////////////////////////////////////////////    Start of game modes
+/////////////////////////////////////////////////////////    Start of
+/// game modes
 ////////////////////////////////////////////////////////////
 
-void eliminationMode(MenuEntry *entry)  // credit to fish for the original asm code
+void eliminationMode(
+  MenuEntry *entry)  // credit to fish for the original asm code
 {
   static u32 address = 0;
   Process::Write32(0x468D1C, 0xE1A00000);
@@ -754,37 +841,51 @@ void eliminationMode(MenuEntry *entry)  // credit to fish for the original asm c
   Process::Write32(0x233B54, 0xEA0EDF6D);
   address = 0x5EB910;
   static const u8 buffer1[] = {
-    0xFF, 0x1F, 0x2D, 0xE9, 0xC4, 0x11, 0x9F, 0xE5, 0xC4, 0x31, 0x9F, 0xE5, 0xC4, 0x61, 0x9F, 0xE5,
-    0xC4, 0x71, 0x9F, 0xE5, 0xC4, 0x81, 0x9F, 0xE5, 0,    0x10, 0xD1, 0xE5, 0,    0,    0x51, 0xE3,
-    0x2,  0,    0,    0x1A, 0,    0x20, 0xA0, 0xE3, 0,    0x20, 0x83, 0xE5, 0x4,  0x20, 0x83, 0xE5,
-    0x1,  0,    0x51, 0xE3, 0x62, 0,    0,    0x1A, 0xA4, 0x11, 0x9F, 0xE5, 0,    0x90, 0x96, 0xE5,
-    0xC8, 0x90, 0x99, 0xE5, 0,    0,    0xA0, 0xE3, 0x34, 0,    0x89, 0xE5, 0x38, 0,    0x89, 0xE5,
-    0,    0x70, 0x97, 0xE5, 0x8,  0x70, 0x87, 0xE0, 0,    0x70, 0x97, 0xE5, 0x7,  0xB0, 0xA0, 0xE1,
-    0,    0x60, 0x96, 0xE5, 0xF4, 0x50, 0xD6, 0xE5, 0x2,  0,    0x55, 0xE3, 0x3,  0,    0,    0xA,
-    0x1E, 0x40, 0xA0, 0xE3, 0x46, 0x40, 0xC7, 0xE5, 0,    0,    0xD1, 0xE5, 0x4,  0,    0xC3, 0xE5,
-    0x2,  0,    0x55, 0xE3, 0x4E, 0,    0,    0x1A, 0,    0x20, 0x93, 0xE5, 0x46, 0x40, 0xD7, 0xE5,
-    0x1,  0x20, 0x82, 0xE2, 0x40, 0,    0x52, 0xE3, 0x8,  0,    0,    0xBA, 0,    0x20, 0xA0, 0xE3,
-    0,    0x20, 0x83, 0xE5, 0x1,  0x40, 0x44, 0xE2, 0,    0,    0x54, 0xE3, 0x2,  0,    0,    0xAA,
-    0x1E, 0x40, 0xA0, 0xE3, 0x46, 0x40, 0xC7, 0xE5, 0x1,  0,    0,    0xEA, 0x46, 0x40, 0xC7, 0xE5,
-    0,    0x20, 0x83, 0xE5, 0x46, 0x40, 0xD7, 0xE5, 0,    0,    0x54, 0xE3, 0x31, 0,    0,    0x1A,
-    0,    0x20, 0x93, 0xE5, 0x3E, 0,    0x52, 0xE3, 0x2E, 0,    0,    0x1A, 0x4,  0,    0xD3, 0xE5,
-    0xC8, 0x80, 0x96, 0xE5, 0,    0x6B, 0x96, 0xE5, 0x80, 0x50, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1,
-    0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0x50, 0x90, 0xC6, 0xE5, 0xC4, 0x50, 0xD8, 0xE5,
-    0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0xC0, 0x90, 0xC6, 0xE5,
-    0x8,  0x51, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3,
-    0x30, 0x91, 0xC6, 0xE5, 0x4C, 0x51, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A,
-    0x4,  0x90, 0xA0, 0xE3, 0xA0, 0x91, 0xC6, 0xE5, 0x90, 0x51, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1,
-    0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0x10, 0x92, 0xC6, 0xE5, 0xD4, 0x51, 0xD8, 0xE5,
-    0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0x80, 0x92, 0xC6, 0xE5,
-    0x18, 0x52, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3,
-    0xF0, 0x92, 0xC6, 0xE5, 0x5C, 0x52, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A,
-    0x4,  0x90, 0xA0, 0xE3, 0x60, 0x93, 0xC6, 0xE5, 0x4,  0,    0x93, 0xE5, 0x1,  0,    0x40, 0xE2,
-    0x4,  0,    0x83, 0xE5, 0xA,  0,    0,    0xEA, 0x4,  0,    0xD3, 0xE5, 0x8,  0x50, 0x93, 0xE5,
-    0x20, 0x50, 0x95, 0xE5, 0x1,  0,    0x55, 0xE3, 0x5,  0,    0,    0x1A, 0x1,  0,    0x50, 0xE3,
-    0x3,  0,    0,    0x1A, 0xC,  0x80, 0x93, 0xE5, 0,    0x90, 0xA0, 0xE3, 0x4,  0x90, 0x88, 0xE5,
-    0xB8, 0x95, 0xCB, 0xE1, 0xFF, 0x1F, 0xBD, 0xE8, 0x2C, 0x30, 0x93, 0xE5, 0x1D, 0x20, 0xF1, 0xEA,
-    0xF4, 0xFD, 0x78, 0x14, 0x7C, 0x1,  0x68, 0,    0x28, 0xC5, 0x65, 0,    0xAC, 0x5,  0,    0x14,
-    0xC4, 0x12, 0,    0,    0xE0, 0x4B, 0x47, 0x15};
+    0xFF, 0x1F, 0x2D, 0xE9, 0xC4, 0x11, 0x9F, 0xE5, 0xC4, 0x31, 0x9F,
+    0xE5, 0xC4, 0x61, 0x9F, 0xE5, 0xC4, 0x71, 0x9F, 0xE5, 0xC4, 0x81,
+    0x9F, 0xE5, 0,    0x10, 0xD1, 0xE5, 0,    0,    0x51, 0xE3, 0x2,
+    0,    0,    0x1A, 0,    0x20, 0xA0, 0xE3, 0,    0x20, 0x83, 0xE5,
+    0x4,  0x20, 0x83, 0xE5, 0x1,  0,    0x51, 0xE3, 0x62, 0,    0,
+    0x1A, 0xA4, 0x11, 0x9F, 0xE5, 0,    0x90, 0x96, 0xE5, 0xC8, 0x90,
+    0x99, 0xE5, 0,    0,    0xA0, 0xE3, 0x34, 0,    0x89, 0xE5, 0x38,
+    0,    0x89, 0xE5, 0,    0x70, 0x97, 0xE5, 0x8,  0x70, 0x87, 0xE0,
+    0,    0x70, 0x97, 0xE5, 0x7,  0xB0, 0xA0, 0xE1, 0,    0x60, 0x96,
+    0xE5, 0xF4, 0x50, 0xD6, 0xE5, 0x2,  0,    0x55, 0xE3, 0x3,  0,
+    0,    0xA,  0x1E, 0x40, 0xA0, 0xE3, 0x46, 0x40, 0xC7, 0xE5, 0,
+    0,    0xD1, 0xE5, 0x4,  0,    0xC3, 0xE5, 0x2,  0,    0x55, 0xE3,
+    0x4E, 0,    0,    0x1A, 0,    0x20, 0x93, 0xE5, 0x46, 0x40, 0xD7,
+    0xE5, 0x1,  0x20, 0x82, 0xE2, 0x40, 0,    0x52, 0xE3, 0x8,  0,
+    0,    0xBA, 0,    0x20, 0xA0, 0xE3, 0,    0x20, 0x83, 0xE5, 0x1,
+    0x40, 0x44, 0xE2, 0,    0,    0x54, 0xE3, 0x2,  0,    0,    0xAA,
+    0x1E, 0x40, 0xA0, 0xE3, 0x46, 0x40, 0xC7, 0xE5, 0x1,  0,    0,
+    0xEA, 0x46, 0x40, 0xC7, 0xE5, 0,    0x20, 0x83, 0xE5, 0x46, 0x40,
+    0xD7, 0xE5, 0,    0,    0x54, 0xE3, 0x31, 0,    0,    0x1A, 0,
+    0x20, 0x93, 0xE5, 0x3E, 0,    0x52, 0xE3, 0x2E, 0,    0,    0x1A,
+    0x4,  0,    0xD3, 0xE5, 0xC8, 0x80, 0x96, 0xE5, 0,    0x6B, 0x96,
+    0xE5, 0x80, 0x50, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,
+    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0x50, 0x90, 0xC6, 0xE5, 0xC4,
+    0x50, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A,
+    0x4,  0x90, 0xA0, 0xE3, 0xC0, 0x90, 0xC6, 0xE5, 0x8,  0x51, 0xD8,
+    0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90,
+    0xA0, 0xE3, 0x30, 0x91, 0xC6, 0xE5, 0x4C, 0x51, 0xD8, 0xE5, 0x5,
+    0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3,
+    0xA0, 0x91, 0xC6, 0xE5, 0x90, 0x51, 0xD8, 0xE5, 0x5,  0,    0x50,
+    0xE1, 0x1,  0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0x10, 0x92,
+    0xC6, 0xE5, 0xD4, 0x51, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,
+    0,    0,    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0x80, 0x92, 0xC6, 0xE5,
+    0x18, 0x52, 0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,
+    0x1A, 0x4,  0x90, 0xA0, 0xE3, 0xF0, 0x92, 0xC6, 0xE5, 0x5C, 0x52,
+    0xD8, 0xE5, 0x5,  0,    0x50, 0xE1, 0x1,  0,    0,    0x1A, 0x4,
+    0x90, 0xA0, 0xE3, 0x60, 0x93, 0xC6, 0xE5, 0x4,  0,    0x93, 0xE5,
+    0x1,  0,    0x40, 0xE2, 0x4,  0,    0x83, 0xE5, 0xA,  0,    0,
+    0xEA, 0x4,  0,    0xD3, 0xE5, 0x8,  0x50, 0x93, 0xE5, 0x20, 0x50,
+    0x95, 0xE5, 0x1,  0,    0x55, 0xE3, 0x5,  0,    0,    0x1A, 0x1,
+    0,    0x50, 0xE3, 0x3,  0,    0,    0x1A, 0xC,  0x80, 0x93, 0xE5,
+    0,    0x90, 0xA0, 0xE3, 0x4,  0x90, 0x88, 0xE5, 0xB8, 0x95, 0xCB,
+    0xE1, 0xFF, 0x1F, 0xBD, 0xE8, 0x2C, 0x30, 0x93, 0xE5, 0x1D, 0x20,
+    0xF1, 0xEA, 0xF4, 0xFD, 0x78, 0x14, 0x7C, 0x1,  0x68, 0,    0x28,
+    0xC5, 0x65, 0,    0xAC, 0x5,  0,    0x14, 0xC4, 0x12, 0,    0,
+    0xE0, 0x4B, 0x47, 0x15};
   memcpy((void *)(address), buffer1, 0x1E8);
   Process::Write32(0x4690FC, 0xEB060A7D);
   address = 0x5EBAF8;
@@ -793,21 +894,23 @@ void eliminationMode(MenuEntry *entry)  // credit to fish for the original asm c
   memcpy((void *)(address), buffer2, 0xC);
   Process::Write32(0x3D4E04, 0xEB085B3E);
   address = 0x5EBB04;
-  static const u8 buffer3[] = {0x8,  0x80, 0x9F, 0xE5, 0,    0,    0x88, 0xE5, 0x20, 0x90,
-                               0x90, 0xE5, 0xE,  0xF0, 0xA0, 0xE1, 0x84, 0x1,  0x68, 0};
+  static const u8 buffer3[] = {
+    0x8,  0x80, 0x9F, 0xE5, 0,    0,    0x88, 0xE5, 0x20, 0x90,
+    0x90, 0xE5, 0xE,  0xF0, 0xA0, 0xE1, 0x84, 0x1,  0x68, 0};
   memcpy((void *)(address), buffer3, 0x14);
   Process::Write32(0x45CBE4, 0xEA063BCB);
   address = 0x5EBB18;
-  static const u8 buffer4[] = {0,    0x1,  0x2D, 0xE9, 0xC,  0x80, 0x9F, 0xE5, 0,    0,
-                               0x88, 0xE5, 0,    0x1,  0xBD, 0xE8, 0x4,  0x10, 0x90, 0xE5,
-                               0x2D, 0xC4, 0xF9, 0xEA, 0x88, 0x1,  0x68, 0};
+  static const u8 buffer4[] = {
+    0,    0x1,  0x2D, 0xE9, 0xC,  0x80, 0x9F, 0xE5, 0,    0,
+    0x88, 0xE5, 0,    0x1,  0xBD, 0xE8, 0x4,  0x10, 0x90, 0xE5,
+    0x2D, 0xC4, 0xF9, 0xEA, 0x88, 0x1,  0x68, 0};
   memcpy((void *)(address), buffer4, 0x1C);
 }
 
 /* void	tagMode(void)
 {
-  u32 g_racePointer = GetRacePointer(), pointer = 0, d0pointer = 0, ccpointer = 0;
-  static u8 playerSlot = 0, taggedPlayer = 0, score = 0;
+  u32 g_racePointer = GetRacePointer(), pointer = 0, d0pointer = 0,
+ccpointer = 0; static u8 playerSlot = 0, taggedPlayer = 0, score = 0;
   static u16 time = 0;
   bool in_race = IsInRace();
   static bool tagged = false;
@@ -821,14 +924,15 @@ void eliminationMode(MenuEntry *entry)  // credit to fish for the original asm c
     tagged = false;
     return;
   }
-  if (in_race && g_racePointer > 0x16000000 && g_racePointer < 0x18000000 &&
-Process::Read32(0x65DA44, offset) && offset > 0x14000000 && offset < 0x18000000 &&
-READU8(READU32(0x65C9A8) + 0x175A8) < 10 && READU32(0x140005AC) > 0x14000000 && READU32(0x140005AC)
-< 0x18000000)
+  if (in_race && g_racePointer > 0x16000000 && g_racePointer <
+0x18000000 && Process::Read32(0x65DA44, offset) && offset > 0x14000000
+&& offset < 0x18000000 && READU8(READU32(0x65C9A8) + 0x175A8) < 10 &&
+READU32(0x140005AC) > 0x14000000 && READU32(0x140005AC) < 0x18000000)
   {
-    if (READU32(READU32(0x140005AC) + 0x12C8) > 0x14000000 && READU32(READU32(0x140005AC) + 0x12C8)
-< 0x18000000 && READU32(READU32(0x140005AC) + 0x12C4) > 0x14000000 && READU32(READU32(0x140005AC) +
-0x12C4) < 0x18000000)
+    if (READU32(READU32(0x140005AC) + 0x12C8) > 0x14000000 &&
+READU32(READU32(0x140005AC) + 0x12C8) < 0x18000000 &&
+READU32(READU32(0x140005AC) + 0x12C4) > 0x14000000 &&
+READU32(READU32(0x140005AC) + 0x12C4) < 0x18000000)
     {
       ccpointer = READU32(READU32(0x140005AC) + 0x12C4);
       d0pointer = READU32(READU32(0x140005AC) + 0x12C8);
@@ -849,7 +953,8 @@ READU8(READU32(0x65C9A8) + 0x175A8) < 10 && READU32(0x140005AC) > 0x14000000 && 
         pointer = READU32(READU32(0x65DA44) + (i * 0x44) + 0x209C);
         if (pointer > 0x14000000 && pointer < 0x18000000)
         {
-          if (READU16(pointer + 0xFF4) > 0x40 && READU16(pointer + 0xFF4) < 0x180)
+          if (READU16(pointer + 0xFF4) > 0x40 && READU16(pointer +
+0xFF4) < 0x180)
           {
             taggedPlayer = i;
           }
@@ -858,37 +963,42 @@ READU8(READU32(0x65C9A8) + 0x175A8) < 10 && READU32(0x140005AC) > 0x14000000 && 
       if (tagged)
       {
         WRITEU16(g_racePointer + 0xFF4, 0xB0);
-        if (time == 0 && READU16(d0pointer + 0x1878) != 7200 || (time - 120) > READU16(d0pointer +
-0x1878))
+        if (time == 0 && READU16(d0pointer + 0x1878) != 7200 || (time
+- 120) > READU16(d0pointer + 0x1878))
         {
           score--;
           time = READU16(d0pointer + 0x1878);
           WRITEU8(ccpointer + 0x46, score);
           WRITEU8(ccpointer + 0x54, score);
-          if (time < 6900 && READU16(g_racePointer + 0xFF4) > 0x40 && taggedPlayer != playerSlot)
+          if (time < 6900 && READU16(g_racePointer + 0xFF4) > 0x40 &&
+taggedPlayer != playerSlot)
           {
             WRITEU16(g_racePointer + 0xFF4, 0);
             tagged = false;
             return;
           }
         }
-        if (READU16(g_racePointer + 0x1F6C) > 5 && READU16(g_racePointer + 0x1F6C) < 0xA000)
+        if (READU16(g_racePointer + 0x1F6C) > 5 &&
+READU16(g_racePointer + 0x1F6C) < 0xA000)
         {
           for (int i = 1; i < 9; i++)
           {
-            pointer = READU32(READU32(0x65DA44) + (i * 0x44) + 0x209C);
-            if (i == playerSlot)
+            pointer = READU32(READU32(0x65DA44) + (i * 0x44) +
+0x209C); if (i == playerSlot)
             {
               continue;
             }
-            if (READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer + 0x24) < 40.f &&
-READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer + 0x24) > -40.f)
+            if (READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer +
+0x24) < 40.f && READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer +
+0x24) > -40.f)
             {
-              if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) < 40.f &&
-READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) > -40.f)
+              if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer
++ 0x28) < 40.f && READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer
++ 0x28) > -40.f)
               {
-                if (READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) < 40.f &&
-READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
+                if (READFLOAT(pointer + 0x2C) -
+READFLOAT(g_racePointer + 0x2C) < 40.f && READFLOAT(pointer + 0x2C) -
+READFLOAT(g_racePointer + 0x2C) > -40.f)
                 {
                   WRITEU16(g_racePointer + 0xFF4, 0);
                   tagged = false;
@@ -901,32 +1011,35 @@ READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
       }
       if (!tagged)
       {
-        pointer = READU32(READU32(0x65DA44) + (taggedPlayer * 0x44) + 0x209C);
-        WRITEU16(g_racePointer + 0xFF4, 0);
-        if (time == 0 || (time - 120) > READU16(d0pointer + 0x1878))
+        pointer = READU32(READU32(0x65DA44) + (taggedPlayer * 0x44) +
+0x209C); WRITEU16(g_racePointer + 0xFF4, 0); if (time == 0 || (time -
+120) > READU16(d0pointer + 0x1878))
         {
           if (score < 99)
             score++;
           time = READU16(d0pointer + 0x1878);
           WRITEU8(ccpointer + 0x46, score);
           WRITEU8(ccpointer + 0x54, score);
-          if (time < 6900 && READU16(READU32(READU32(0x65DA44) + (taggedPlayer * 0x44) + 0x209C) +
-0xFF4) < 0x40 && playerSlot == taggedPlayer)
+          if (time < 6900 && READU16(READU32(READU32(0x65DA44) +
+(taggedPlayer * 0x44) + 0x209C) + 0xFF4) < 0x40 && playerSlot ==
+taggedPlayer)
           {
             tagged = true;
             taggedPlayer = playerSlot;
             return;
           }
         }
-        if (READU16(g_racePointer + 0xC32) == 1 && READFLOAT(pointer + 0x24) -
-READFLOAT(g_racePointer + 0x24) < 40.f && READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer +
-0x24) > -40.f)
+        if (READU16(g_racePointer + 0xC32) == 1 && READFLOAT(pointer +
+0x24) - READFLOAT(g_racePointer + 0x24) < 40.f && READFLOAT(pointer +
+0x24) - READFLOAT(g_racePointer + 0x24) > -40.f)
         {
-          if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) < 40.f &&
-READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) > -40.f)
+          if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer +
+0x28) < 40.f && READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer +
+0x28) > -40.f)
           {
-            if (READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) < 40.f &&
-READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
+            if (READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer +
+0x2C) < 40.f && READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer +
+0x2C) > -40.f)
             {
               WRITEU16(g_racePointer + 0xFF4, 0xB0);
               tagged = true;
@@ -941,8 +1054,8 @@ READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
 
 void	shineTheif(void)
 {
-  u32 g_racePointer = GetRacePointer(), pointer = 0, d0pointer = 0, ccpointer = 0;
-  static u8 playerSlot = 0, shinePlayer = 0, score = 0;
+  u32 g_racePointer = GetRacePointer(), pointer = 0, d0pointer = 0,
+ccpointer = 0; static u8 playerSlot = 0, shinePlayer = 0, score = 0;
   static u16 time = 0;
   bool in_race = IsInRace();
   static bool withShine = false;
@@ -956,13 +1069,15 @@ void	shineTheif(void)
     withShine = false;
     return;
   }
-  if (in_race && g_racePointer > 0x16000000 && g_racePointer < 0x18000000 && READU32(0x65DA44) >
-0x14000000 && READU32(0x65DA44) < 0x18000000 && READU8(READU32(0x65C9A8) + 0x175A8) < 10 &&
+  if (in_race && g_racePointer > 0x16000000 && g_racePointer <
+0x18000000 && READU32(0x65DA44) > 0x14000000 && READU32(0x65DA44) <
+0x18000000 && READU8(READU32(0x65C9A8) + 0x175A8) < 10 &&
 READU32(0x140005AC) > 0x14000000 && READU32(0x140005AC) < 0x18000000)
   {
-    if (READU32(READU32(0x140005AC) + 0x12C8) > 0x14000000 && READU32(READU32(0x140005AC) + 0x12C8)
-< 0x18000000 && READU32(READU32(0x140005AC) + 0x12C4) > 0x14000000 && READU32(READU32(0x140005AC) +
-0x12C4) < 0x18000000)
+    if (READU32(READU32(0x140005AC) + 0x12C8) > 0x14000000 &&
+READU32(READU32(0x140005AC) + 0x12C8) < 0x18000000 &&
+READU32(READU32(0x140005AC) + 0x12C4) > 0x14000000 &&
+READU32(READU32(0x140005AC) + 0x12C4) < 0x18000000)
     {
       ccpointer = READU32(READU32(0x140005AC) + 0x12C4);
       d0pointer = READU32(READU32(0x140005AC) + 0x12C8);
@@ -982,7 +1097,8 @@ READU32(0x140005AC) > 0x14000000 && READU32(0x140005AC) < 0x18000000)
         pointer = READU32(READU32(0x65DA44) + (i * 0x44) + 0x209C);
         if (pointer > 0x14000000 && pointer < 0x18000000)
         {
-          if (READU16(pointer + 0xFF4) > 0x40 && READU16(pointer + 0xFF4) < 0x180)
+          if (READU16(pointer + 0xFF4) > 0x40 && READU16(pointer +
+0xFF4) < 0x180)
           {
             shinePlayer = i;
           }
@@ -991,37 +1107,42 @@ READU32(0x140005AC) > 0x14000000 && READU32(0x140005AC) < 0x18000000)
       if (withShine)
       {
         WRITEU16(g_racePointer + 0xFF4, 0xB0);
-        if (time == 0 && READU16(d0pointer + 0x1878) != 7200 || (time - 120) > READU16(d0pointer +
-0x1878))
+        if (time == 0 && READU16(d0pointer + 0x1878) != 7200 || (time
+- 120) > READU16(d0pointer + 0x1878))
         {
           score++;
           time = READU16(d0pointer + 0x1878);
           WRITEU8(ccpointer + 0x46, score);
           WRITEU8(ccpointer + 0x54, score);
-          if (time < 6900 && READU16(g_racePointer + 0xFF4) > 0x40 && shinePlayer != playerSlot)
+          if (time < 6900 && READU16(g_racePointer + 0xFF4) > 0x40 &&
+shinePlayer != playerSlot)
           {
             WRITEU16(g_racePointer + 0xFF4, 0);
             withShine = false;
             return;
           }
         }
-        if (READU16(g_racePointer + 0x1F6C) > 5 && READU16(g_racePointer + 0x1F6C) < 0xA000)
+        if (READU16(g_racePointer + 0x1F6C) > 5 &&
+READU16(g_racePointer + 0x1F6C) < 0xA000)
         {
           for (int i = 1; i < 9; i++)
           {
-            pointer = READU32(READU32(0x65DA44) + (i * 0x44) + 0x209C);
-            if (i == playerSlot)
+            pointer = READU32(READU32(0x65DA44) + (i * 0x44) +
+0x209C); if (i == playerSlot)
             {
               continue;
             }
-            if (READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer + 0x24) < 40.f &&
-READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer + 0x24) > -40.f)
+            if (READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer +
+0x24) < 40.f && READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer +
+0x24) > -40.f)
             {
-              if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) < 40.f &&
-READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) > -40.f)
+              if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer
++ 0x28) < 40.f && READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer
++ 0x28) > -40.f)
               {
-                if (READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) < 40.f &&
-READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
+                if (READFLOAT(pointer + 0x2C) -
+READFLOAT(g_racePointer + 0x2C) < 40.f && READFLOAT(pointer + 0x2C) -
+READFLOAT(g_racePointer + 0x2C) > -40.f)
                 {
                   WRITEU16(g_racePointer + 0xFF4, 0);
                   withShine = false;
@@ -1034,28 +1155,31 @@ READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
       }
       if (!withShine)
       {
-        pointer = READU32(READU32(0x65DA44) + (shinePlayer * 0x44) + 0x209C);
-        WRITEU16(g_racePointer + 0xFF4, 0);
-        if (time == 0 || (time - 120) > READU16(d0pointer + 0x1878))
+        pointer = READU32(READU32(0x65DA44) + (shinePlayer * 0x44) +
+0x209C); WRITEU16(g_racePointer + 0xFF4, 0); if (time == 0 || (time -
+120) > READU16(d0pointer + 0x1878))
         {
           time = READU16(d0pointer + 0x1878);
-          if (time < 6900 && READU16(READU32(READU32(0x65DA44) + (shinePlayer * 0x44) + 0x209C) +
-0xFF4) < 0x40 && playerSlot == shinePlayer)
+          if (time < 6900 && READU16(READU32(READU32(0x65DA44) +
+(shinePlayer * 0x44) + 0x209C) + 0xFF4) < 0x40 && playerSlot ==
+shinePlayer)
           {
             withShine = true;
             shinePlayer = playerSlot;
             return;
           }
         }
-        if (READU16(g_racePointer + 0xC32) == 1 && READFLOAT(pointer + 0x24) -
-READFLOAT(g_racePointer + 0x24) < 40.f && READFLOAT(pointer + 0x24) - READFLOAT(g_racePointer +
-0x24) > -40.f)
+        if (READU16(g_racePointer + 0xC32) == 1 && READFLOAT(pointer +
+0x24) - READFLOAT(g_racePointer + 0x24) < 40.f && READFLOAT(pointer +
+0x24) - READFLOAT(g_racePointer + 0x24) > -40.f)
         {
-          if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) < 40.f &&
-READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer + 0x28) > -40.f)
+          if (READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer +
+0x28) < 40.f && READFLOAT(pointer + 0x28) - READFLOAT(g_racePointer +
+0x28) > -40.f)
           {
-            if (READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) < 40.f &&
-READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
+            if (READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer +
+0x2C) < 40.f && READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer +
+0x2C) > -40.f)
             {
               WRITEU16(g_racePointer + 0xFF4, 0xB0);
               withShine = true;
@@ -1071,9 +1195,11 @@ READFLOAT(pointer + 0x2C) - READFLOAT(g_racePointer + 0x2C) > -40.f)
 void CountdownMode(MenuEntry *entry)
 {
   u32 pointer = 0, value = 0, g_racePointer = GetRacePointer(),
-      g_oldRacePointer5D0 = GetOldPointer5D0(), g_oldRacePointer5CC = GetOldPointer5CC();
+      g_oldRacePointer5D0 = GetOldPointer5D0(),
+      g_oldRacePointer5CC = GetOldPointer5CC();
   static u8 score = 0;
-  static bool AddedToScore = false, AddedToTime = false, end_race = false;
+  static bool AddedToScore = false, AddedToTime = false,
+              end_race = false;
   if (!IsInRace()) {
     score = 0;
     AddedToScore = false;
@@ -1082,7 +1208,8 @@ void CountdownMode(MenuEntry *entry)
     return;
   }
   else {
-    if (Process::Read32(0x65C528, pointer) && Process::Read32(pointer + 0xC8, pointer) &&
+    if (Process::Read32(0x65C528, pointer) &&
+        Process::Read32(pointer + 0xC8, pointer) &&
         is_in_range(pointer, 0x16000000, 0x18000000)) {
       Process::Write32(pointer + 0x34, 0);
       Process::Write32(pointer + 0x38, 0);
@@ -1094,21 +1221,28 @@ void CountdownMode(MenuEntry *entry)
     }
 
     if (!AddedToScore && Process::Read32(0xFFFF6F0, pointer) &&
-        Process::Read32(pointer - 0xC, pointer) && Process::Read32(pointer - 0x24, pointer) &&
-        Process::Read32(pointer + 0x7C, pointer) && Process::Read32(pointer + 0x20, pointer) &&
-        Process::Read32(pointer + 0x70, pointer) && Process::Read32(pointer - 0x30, pointer) &&
-        Process::Read32(pointer + 0x38, value) && Process::Read32(pointer + 0x48, pointer) &&
+        Process::Read32(pointer - 0xC, pointer) &&
+        Process::Read32(pointer - 0x24, pointer) &&
+        Process::Read32(pointer + 0x7C, pointer) &&
+        Process::Read32(pointer + 0x20, pointer) &&
+        Process::Read32(pointer + 0x70, pointer) &&
+        Process::Read32(pointer - 0x30, pointer) &&
+        Process::Read32(pointer + 0x38, value) &&
+        Process::Read32(pointer + 0x48, pointer) &&
         is_in_range(value, 0x40000000, pointer)) {
       SubToTime(3);
       AddedToScore = true;
       score++;
     }
     if (AddedToScore && Process::Read32(0xFFFF6F0, pointer) &&
-        Process::Read32(pointer - 0xC, pointer) && Process::Read32(pointer - 0x24, pointer) &&
-        Process::Read32(pointer + 0x7C, pointer) && Process::Read32(pointer + 0x20, pointer) &&
-        Process::Read32(pointer + 0x70, pointer) && Process::Read32(pointer - 0x30, pointer) &&
-        Process::Read32(pointer + 0x38, value) && Process::Read32(pointer + 0x48, pointer) &&
-        value == pointer)
+        Process::Read32(pointer - 0xC, pointer) &&
+        Process::Read32(pointer - 0x24, pointer) &&
+        Process::Read32(pointer + 0x7C, pointer) &&
+        Process::Read32(pointer + 0x20, pointer) &&
+        Process::Read32(pointer + 0x70, pointer) &&
+        Process::Read32(pointer - 0x30, pointer) &&
+        Process::Read32(pointer + 0x38, value) &&
+        Process::Read32(pointer + 0x48, pointer) && value == pointer)
       AddedToScore = false;
 
     if (GetTime() == 0 || end_race) {
@@ -1119,7 +1253,8 @@ void CountdownMode(MenuEntry *entry)
       Process::Read32(0x65DA44, value);
       for (int i = 1; i < totalPlayers; i++) {
         if (Process::Read32(value + 0x209C + (i * 0x44), pointer) &&
-            Process::Read32(pointer + 0xF2C, pointer) && pointer < 0x3DCCCCCD)
+            Process::Read32(pointer + 0xF2C, pointer) &&
+            pointer < 0x3DCCCCCD)
           total++;
         else if (pointer > 0x3DCCCCCD)
           break;
@@ -1135,7 +1270,9 @@ void CountdownMode(MenuEntry *entry)
       if (!screen.IsTop)
         return false;
       screen.Draw(Utils::Format("Score: %01d", score), 10, 211);
-      screen.Draw(Utils::Format("Time: %01d:%02d", GetMinutes(), GetSeconds()), 10, 223);
+      screen.Draw(
+        Utils::Format("Time: %01d:%02d", GetMinutes(), GetSeconds()),
+        10, 223);
       return true;
     });
   }
@@ -1154,7 +1291,8 @@ void TwoHundredCCStable(MenuEntry *entry)
   if (!IsInRace())
     return;
   if (Controller::IsKeysDown(R + B + A) && GetTime() != 0 &&
-      Process::ReadFloat(GetRacePointer() + 0xF2C, speed) && speed > 2.5f &&
+      Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
+      speed > 2.5f &&
       Process::Read8(GetRacePointer() + 0xF9C, boost) &&
       boost != 0)  // if pressing B and R and in race and in boost
   {
@@ -1162,15 +1300,18 @@ void TwoHundredCCStable(MenuEntry *entry)
     Process::WriteFloat(GetRacePointer() + 0xF2C, speed);
   }
   else if (Controller::IsKeysDown(R + B + A) && GetTime() != 0 &&
-           Process::ReadFloat(GetRacePointer() + 0xF2C, speed) && speed > 1.5f && speed < 5.5f &&
+           Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
+           speed > 1.5f && speed < 5.5f &&
            Process::Read8(GetRacePointer() + 0xF9C, boost) &&
-           boost == 0)  // if pressing R and B and in race and speed > 1.5f and y in boost
+           boost == 0)  // if pressing R and B and in race and speed
+                        // > 1.5f and y in boost
   {
     Process::ReadFloat(GetRacePointer() + 0xF2C, speed);
     speed += 1.5f;
     Process::WriteFloat(GetRacePointer() + 0xF2C, speed);
   }
-  if (Controller::IsKeyDown(B) && Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
+  if (Controller::IsKeyDown(B) &&
+      Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
       speed > 3.f) {
     Process::ReadFloat(GetRacePointer() + 0xF2C, speed);
     Process::WriteFloat(GetRacePointer() + 0xF2C, (speed - 0.4f));
@@ -1189,7 +1330,8 @@ void FiveHundredCCStable(MenuEntry *entry)
   if (!IsInRace())
     return;
   if (Controller::IsKeysDown(R + B + A) && GetTime() != 0 &&
-      Process::ReadFloat(GetRacePointer() + 0xF2C, speed) && speed > 2.5f &&
+      Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
+      speed > 2.5f &&
       Process::Read8(GetRacePointer() + 0xF9C, boost) &&
       boost != 0)  // if pressing B and R and in race and in boost
   {
@@ -1197,22 +1339,26 @@ void FiveHundredCCStable(MenuEntry *entry)
     Process::WriteFloat(GetRacePointer() + 0xF2C, speed);
   }
   else if (Controller::IsKeysDown(R + B + A) && GetTime() != 0 &&
-           Process::ReadFloat(GetRacePointer() + 0xF2C, speed) && speed > 1.5f && speed < 5.5f &&
+           Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
+           speed > 1.5f && speed < 5.5f &&
            Process::Read8(GetRacePointer() + 0xF9C, boost) &&
-           boost == 0)  // if pressing R and B and in race and speed > 1.5f and not in boost
+           boost == 0)  // if pressing R and B and in race and speed
+                        // > 1.5f and not in boost
   {
     Process::ReadFloat(GetRacePointer() + 0xF2C, speed);
     speed += 1.5f;
     Process::WriteFloat(GetRacePointer() + 0xF2C, speed);
   }
-  if (Controller::IsKeyDown(B) && Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
+  if (Controller::IsKeyDown(B) &&
+      Process::ReadFloat(GetRacePointer() + 0xF2C, speed) &&
       speed > 5.f) {
     Process::ReadFloat(GetRacePointer() + 0xF2C, speed);
     Process::WriteFloat(GetRacePointer() + 0xF2C, (speed - 0.4f));
   }
 }
 
-/////////////////////////////////////////////////////////    Start of menu codes
+/////////////////////////////////////////////////////////    Start of
+/// menu codes
 ////////////////////////////////////////////////////////////
 
 void writeAcc(int speed)
@@ -1235,7 +1381,8 @@ void miiDumper(MenuEntry *entry)
   Process::Read32(0x663C90, offset);
   Process::Read32(offset + 0x2B8, offset);
   for (int player = 0; player < 8; player++)  // GetTotalPlayers()
-    Process::ReadString(offset + 0x6E6 + (player * 0xA8), names[player], 0x14, StringFormat::Utf16);
+    Process::ReadString(offset + 0x6E6 + (player * 0xA8),
+                        names[player], 0x14, StringFormat::Utf16);
   std::vector<Mii> g_miis = {
     {names[0], 0}, {names[1], 1}, {names[2], 2}, {names[3], 3},
     {names[4], 4}, {names[5], 5}, {names[6], 6}, {names[7], 7},
@@ -1246,16 +1393,20 @@ void miiDumper(MenuEntry *entry)
   File file;
   Directory dir("miis", true);
   Keyboard kb("Mii Dumper\n\nName the file for the dump of the Mii.");
-  Keyboard keyboard("Mii Dumper\n\nSelect which player's Mii you'd like to dump", miis);
+  Keyboard keyboard(
+    "Mii Dumper\n\nSelect which player's Mii you'd like to dump",
+    miis);
   int choice = keyboard.Open();
   if (choice == -1)
     return;
   if (kb.Open(input) != -1 && choice != -1)
     if (dir.OpenFile(file, input + ".3dsmii", File::RWC) == 0)
-      if (!file.Dump(offset + 0x6CC + (g_miis[choice].playerSlot * 0xA8), 0x5C))
-        MessageBox(
-          "Mii dumped to:\n" + file.GetFullName() +
-          "\nNow, use \"3DS Mii Edit Tool\" to import this Mii into your CFL_DB.dat file.")();
+      if (!file.Dump(
+            offset + 0x6CC + (g_miis[choice].playerSlot * 0xA8),
+            0x5C))
+        MessageBox("Mii dumped to:\n" + file.GetFullName() +
+                   "\nNow, use \"3DS Mii Edit Tool\" to import this "
+                   "Mii into your CFL_DB.dat file.")();
       else
         MessageBox("Error\nMii dump failed. Offset:" + offset)();
   file.Flush();
@@ -1282,9 +1433,12 @@ void spedometer(MenuEntry *entry)
   if (speeds.empty())
     for (const Speedometer &i : speed)
       speeds.push_back(i.name);
-  static float multiplications[] = {10.376756f, 6.4478171f, 2.8824318f, 9.4567986f}, base = 0;
+  static float multiplications[] = {10.376756f, 6.4478171f,
+                                    2.8824318f, 9.4567986f},
+               base = 0;
   static const char *units[] = {" km/h", " mph", " m/s", " f/s"};
-  Keyboard keyboard("Speedometer\n\nSelect your preferred measurement unit", speeds);
+  Keyboard keyboard(
+    "Speedometer\n\nSelect your preferred measurement unit", speeds);
   static int choice;
   static bool keyboardDone = false;
   Process::ReadFloat(GetRacePointer() + 0xF2C, base);
@@ -1303,14 +1457,16 @@ void spedometer(MenuEntry *entry)
   OSD::Run([](const Screen &screen) {
     if (!screen.IsTop)
       return false;
-    screen.Draw(Utils::Format("%01d", (int)base) + units[choice], 340, 211);
+    screen.Draw(Utils::Format("%01d", (int)base) + units[choice], 340,
+                211);
     return true;
   });
 }
 
 void disableFirstPersonView(MenuEntry *entry)
 {
-  if (Process::Read32(0x14000084, offset) && Process::Read32(offset + 0x316C, offset) &&
+  if (Process::Read32(0x14000084, offset) &&
+      Process::Read32(offset + 0x316C, offset) &&
       is_in_range(offset, 0x14000000, 0x18000000))
     Process::Write8(offset + 0x119, 0);
 }
@@ -1318,17 +1474,21 @@ void disableFirstPersonView(MenuEntry *entry)
 void timeTrialGhost(MenuEntry *entry)
 {
   /*
-  -You must enter a race and then exit/finish/restart the race in order for this to take effect
-  -Having this enabled for more than 1 race will crash the game, unless you click restart and not
-  exit or next course or anything else.
+  -You must enter a race and then exit/finish/restart the race in
+  order for this to take effect -Having this enabled for more than 1
+  race will crash the game, unless you click restart and not exit or
+  next course or anything else.
   */
-  if (Process::Read32(0xFFFF5D4, data) && Process::Read32(data - 4, data) &&
+  if (Process::Read32(0xFFFF5D4, data) &&
+      Process::Read32(data - 4, data) &&
       Process::Read32(data + 0x18, data)) {
-    if (Process::Read32(0x14000084, offset) && Process::Read32(offset + 0x316C, offset) &&
+    if (Process::Read32(0x14000084, offset) &&
+        Process::Read32(offset + 0x316C, offset) &&
         is_in_range(offset, 0x14000000, 0x18000000)) {
       Process::Write8(offset + 0x119, 0);
       Process::Write32(data + 0x208, 0x10001);
-      if (IsInRace() && Process::Read32(0x65DA44, data) && Process::Read32(data + 0x20E0, data))
+      if (IsInRace() && Process::Read32(0x65DA44, data) &&
+          Process::Read32(data + 0x20E0, data))
         Process::Write32(data + 0x24, 0x49000000);
     }
   }
@@ -1364,7 +1524,8 @@ void randomVR(MenuEntry *entry)
 
 void unlockEverything(MenuEntry *entry)
 {
-  if (Process::Read32(0x6673C8, offset) && is_in_range(offset, 0x10000000, 0x18000000)) {
+  if (Process::Read32(0x6673C8, offset) &&
+      is_in_range(offset, 0x10000000, 0x18000000)) {
     Process::Write8(0x6BA3 + offset, 0x3F);
     Process::Write32(0x6BA4 + offset, 0x1FF003F);
     Process::Write16(0x6BAC + offset, 0x3FFF);
@@ -1383,20 +1544,24 @@ void NoDC(MenuEntry *entry)
 
 void fastGame(MenuEntry *entry)
 {
-  if (Process::Read32(0x140002F4, offset) && is_in_range(offset, 0x14000000, 0x18000000) &&
+  if (Process::Read32(0x140002F4, offset) &&
+      is_in_range(offset, 0x14000000, 0x18000000) &&
       Process::Read32(offset + 0x14, offset))
     Process::Write32(offset + 0x2B4, 0);
 }
 
-/////////////////////////////////////////////////////////    Start of region & flag codes
+/////////////////////////////////////////////////////////    Start of
+/// region & flag codes
 ////////////////////////////////////////////////////////////
 
 void SetFlag(MenuEntry *entry)  // beta
 {
   static bool shown_dialogue = false, error = false;
   static u16 flag;
-  std::string original = "Enter your flag ID (available on MK7 NTR Plugin GBAtemp Page):";
-  std::string errorMessage = "Invalid input! Please try again or press B to cancel.";
+  std::string original =
+    "Enter your flag ID (available on MK7 NTR Plugin GBAtemp Page):";
+  std::string errorMessage =
+    "Invalid input! Please try again or press B to cancel.";
   if (error) {
     Keyboard keyboard(errorMessage);
     if (keyboard.Open(flag) == -1)
@@ -1421,7 +1586,9 @@ void SetFlag(MenuEntry *entry)  // beta
 void SetCoordinates(MenuEntry *entry)
 {
   static u32 coordinates = 0;
-  Keyboard keyboard("Enter your globe coordinates (available on MK7 NTR Plugin GBAtemp Page):");
+  Keyboard keyboard(
+    "Enter your globe coordinates (available on MK7 NTR Plugin "
+    "GBAtemp Page):");
   if (keyboard.Open(coordinates) != -1)
     writeLocation(coordinates);
 }

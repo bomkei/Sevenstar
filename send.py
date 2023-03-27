@@ -47,7 +47,7 @@ upload_src_path = "./sevenstar.3gx"
 upload_dst_path = "STOR /luma/plugins/0004000000030600/sevenstar.3gx"
 
 # サーバーのユーザー名
-username = "aaa" 
+username = "letz" 
 
 # サーバーのログインパスワード
 password = ""
