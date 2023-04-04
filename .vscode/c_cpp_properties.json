@@ -1,18 +1,31 @@
 {
+    "env": {
+        "devkitpro" : "/opt/devkitpro",
+        "devkitarm" : "${devkitpro}/devkitARM",
+        "ctrulib" : "${devkitpro}/libctru"
+    },
     "configurations": [
         {
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/libctrpf/**",
-                "/opt/devkitpro/libctru/**",
+                "${ctrulib}/include/**",
                 "/opt/devkitpro/devkitARM/arm-none-eabi/**"
             ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/include/**",
+                    "${ctrulib}/include/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
             "defines": [],
-            "compilerPath": "/opt/devkitpro/devkitARM/bin/arm-none-eabi-gcc",
+            "compilerPath": "${devkitarm}/bin/arm-none-eabi-g++",
             "cStandard": "c17",
             "cppStandard": "c++20",
-            "intelliSenseMode": "linux-gcc-arm"
+            "intelliSenseMode": "gcc-arm"
         }
     ],
     "version": 4

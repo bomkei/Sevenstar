@@ -1,6 +1,12 @@
 #pragma once
 
 #include "CTRPluginFramework.hpp"
+#include "Unicode.h"
+#include "csvc.h"
+#include "3ds.h"
+#include <math.h>
+#include <vector>
+#include "helpers.h"
 
 #define write8(a, v) (*(u8*)(a) = (u32)v)
 #define write16(a, v) (*(u16*)(a) = (u32)v)
@@ -16,6 +22,12 @@ inline bool is_in_range(u32 value, u32 lowerbound, u32 upperbound)
 }
 
 namespace CTRPluginFramework {
+
+static inline MenuEntry* GetEnabled(MenuEntry* e)
+{
+  e->Enable();
+  return e;
+}
 
 enum ItemID : u16 {
   ITEM_Banana = 0,
@@ -35,32 +47,40 @@ enum ItemID : u16 {
   ITEM_Lucky7 = 14,
 };
 
-//
-// アイテム系
-class ItemCodes {
-public:
-  static u16* get_item_pointer();
-
-  static bool write_item(ItemID item);
-
-  // ボム兵無限
-  static void disable_bomb_limit(MenuEntry* entry);
-
-  // ボム兵高速爆発
-  static void fast_bomb_explosion(MenuEntry* entry);
-
-  // ボム兵サイズ変更
-  static void big_bomb(MenuEntry* entry);
-
-  // 無限アイテム
-  static void item_wheel(MenuEntry* entry);
-
-  static MenuFolder* create_folder();
-};
-
 class Game {
 public:
   static bool is_in_race();
 };
+
+class OSDMenu {
+public:
+  OSDMenu(OSDMenu const&) = delete;
+  OSDMenu(OSDMenu&&) = delete;
+
+  OSDMenu(std::string const& title,
+          std::vector<std::string> const& vec);
+
+  OSDMenu(std::string&& title, std::vector<std::string>&& vec);
+
+  ~OSDMenu();
+
+  int open(bool useTopScreen = true, bool overlay = false);
+
+private:
+  std::string const title;
+  std::vector<std::string> const entries;
+};
+
+// ボム兵無限
+void disable_bomb_limit(MenuEntry* entry);
+
+// ボム兵高速爆発
+void fast_bomb_explosion(MenuEntry* entry);
+
+// ボム兵サイズ変更
+void big_bomb(MenuEntry* entry);
+
+// 無限アイテム
+void item_wheel(MenuEntry* entry);
 
 }  // namespace CTRPluginFramework

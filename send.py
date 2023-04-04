@@ -1,3 +1,4 @@
+import sys
 import ftplib
 import logging
 
@@ -55,6 +56,9 @@ password = ""
 # FTPサーバポート
 port = 5000
 timeout = 50
+
+if "-d" in sys.argv:
+    upload_src_path = "./sevenstar-debug.3gx"
 
 logger.info("===START FTP===")
 ftp_upload(hostname, username, password, port, upload_src_path, upload_dst_path, timeout)

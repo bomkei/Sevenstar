@@ -51,6 +51,9 @@
         "typeinfo": "cpp",
         "ctime": "cpp",
         "list": "cpp",
-        "map": "cpp"
-    }
+        "map": "cpp",
+        "iostream": "cpp"
+    },
+
+    "editor.tabSize": 2
 }

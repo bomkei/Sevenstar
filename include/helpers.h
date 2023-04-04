@@ -50,9 +50,4 @@ public:
   }
 };
 
-class FolderCreator {
-public:
-  FolderCreator(std::string const& name);
-};
-
 }  // namespace CTRPluginFramework

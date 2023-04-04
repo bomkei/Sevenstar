@@ -9,7 +9,7 @@ endif
 export TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
-CTRPFLIB	:=	$(TOPDIR)/libctrpf
+CTRPFLIB	:=	/opt/devkitpro/libctrpf
 
 TARGET		:= 	sevenstar
 INCLUDES	:= 	include \
@@ -64,7 +64,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L $(dir)/lib)
 
-.PHONY: $(BUILD) libctrpf clean re relink all
+.PHONY: $(BUILD) $(TARGET).3gx all libctrpf clean re relink all debug debugdir
 
 #---------------------------------------------------------------------------------
 all: $(TARGET).3gx
@@ -72,13 +72,12 @@ all: $(TARGET).3gx
 lib:
 	cd libctrpf && make lib/libctrpf.a -j8 \
 	&& make lib/libctrpf.a && cd ..
-	$(MAKE) relink
 
 release:
 	@[ -d $@ ] || mkdir -p $@
 
 debugdir:
-	@[ -d $@ ] || mkdir -p $@
+	@[ -d debug ] || mkdir -p debug
 
 debug: debugdir $(TARGET)-debug.3gx
 
@@ -87,19 +86,19 @@ $(TARGET).3gx : release
 	BUILD_CFLAGS="-DNDEBUG=1 -O2 -fomit-frame-pointer" DEPSDIR=$(CURDIR)/release \
 	--no-print-directory -C release	-f $(CURDIR)/Makefile
 
-$(TARGET)-debug.3gx : debug
+$(TARGET)-debug.3gx : debugdir
 	@$(MAKE) BUILD=debug OUTPUT=$(CURDIR)/$@ BUILD_LIBS="-lctrpfd -lctrud" BUILD_CFLAGS="-DDEBUG=1 -Og" G=-g \
 	DEPSDIR=$(CURDIR)/debug --no-print-directory -C debug -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr release debug *.elf *.3gx
+	@rm -rf release debug *.elf *.3gx
 
 re: clean all
 
 relink:
-	@rm *.elf *.3gx
+	@rm -rf *.elf *.3gx
 	@$(MAKE)
 
 #---------------------------------------------------------------------------------
