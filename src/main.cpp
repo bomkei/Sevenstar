@@ -17,6 +17,9 @@ public:
 
 OverlayPluginMenu* overlay_menu = nullptr;
 
+// ----------------------------------------------------
+//  Overlay Menu
+// ----------------------------------------------------
 void OverlayMenu(MenuEntry* e)
 {
   static bool is_opened = false;
@@ -91,6 +94,9 @@ void OverlayMenu(MenuEntry* e)
   }
 }
 
+// ----------------------------------------------------
+//  Address Viewer
+// ----------------------------------------------------
 void AddressViewer(MenuEntry* entry)
 {
   static u32 addr = 0;
@@ -121,6 +127,9 @@ void AddressViewer(MenuEntry* entry)
   read = Process::Read32(addr, value);
 }
 
+// ----------------------------------------------------
+//  Pointer Viewer
+// ----------------------------------------------------
 void PointerViewer(MenuEntry* entry)
 {
   static constexpr auto readMaximum = 20;
@@ -138,7 +147,7 @@ void PointerViewer(MenuEntry* entry)
   static char fullbuf[LineBufferLength * (readMaximum + 1)];
 
   auto const osd = [](Screen const& screen) -> bool {
-    if (screen.IsTop)
+    if (!screen.IsTop)
       return false;
 
     u32 dy = 230 - count * 10;
@@ -227,122 +236,183 @@ void PointerViewer(MenuEntry* entry)
   }
 }
 
-void SearchBranch(MenuEntry* entry)
+// ----------------------------------------------------
+//  Search Instruction
+// ----------------------------------------------------
+void SearchInstruction(MenuEntry* entry)
 {
   struct Item {
     u32 addr;  // of opcode
     u32 offset;
   };
 
-  static std::vector<Item> result;
+  enum SearchType {
+    ST_Specify,
+    ST_Branch,
+  };
+
+  static std::vector<std::string> const searchTypeStrings = {
+    "Specify hex-value",
+    "Branch",
+  };
+
+  static SearchType searchType = ST_Specify;
 
   static u32 begin = 0x100000;
-  static u32 end = 0x500000;
+  static u32 end = 0x200000;
   static u32 target = 0;
 
-  int choice = Keyboard("", {"New search", "View result"}).Open();
+  static u32 instruction = 0;  // Don't write
 
-  if (choice == -1)
-    return;
+  static std::vector<Item> result;
 
-  if (choice == 0) {
-    if (Keyboard("Begin addr").Open(begin, begin) != 0)
-      return;
+  static int choice;
 
-    if (Keyboard("End addr").Open(end, end) != 0)
-      return;
+  while (true) {
+  loop_begin_1:
+    choice =
+      OSDMenu("Select option", {"New search", "View result"}).open();
 
-    if (begin >= end) {
-      MessageBox(
-        "Invalid range, end-address must bigger than "
-        "begin-address.")();
+    if (choice == -1)
+      break;
 
-      return;
-    }
+    if (choice == 0) {
+      while (true) {
+        choice =
+          OSDMenu("Input search-options",
+                  {
+                    std::string("Search-type: ") +
+                      searchTypeStrings[searchType],
+                    Utils::Format("Begin address: %08X", begin),
+                    Utils::Format("End address: %08X", end),
+                    Utils::Format("Instruction = %08X", instruction),
+                    "[Search]",
+                  })
+            .open();
 
-    if (Keyboard("Target addr").Open(target, target) != 0)
-      return;
+        switch (choice) {
+          case 0:
+            choice =
+              OSDMenu("Select search type", searchTypeStrings).open();
 
-    auto const& screen = OSD::GetTopScreen();
+            if (choice != -1)
+              searchType = (SearchType)choice;
 
-    result.clear();
+            continue;
 
-    Clock clock;
+          case 1:
+            Keyboard("Begin address").Open(begin, begin);
+            continue;
 
-    u32 const range = end - begin;
-    u32 tmp = 0;
+          case 2:
+            Keyboard("End address").Open(end, end);
+            continue;
 
-    for (u32 offset = 0, addr = begin; addr <= end; addr += 4) {
-      constexpr int win_width = 240;
-      constexpr int win_height = 100;
-      constexpr int win_posX = (400 - win_width) / 2;
-      constexpr int win_posY = (240 - win_height) / 2;
-      constexpr int drawMilliseconds = 100;
+          case 4:
+            break;
 
-      offset = ((target - addr - 8) >> 2) & 0xFFFFFF;
+          case -1:
+            goto loop_begin_1;
+        }
 
-      Controller::Update();
-
-      if (Controller::IsKeysDown(Key::B))
         break;
-
-      if (Process::Read32(addr, tmp) &&
-          tmp == (0xEB << 24) | offset) {
-        result.emplace_back(Item{addr, offset});
-      }
-      else if (!clock.HasTimePassed(Milliseconds(drawMilliseconds))) {
-        continue;
       }
 
-      // if (clock.HasTimePassed(Milliseconds(drawMilliseconds))) {
+      if (Keyboard("Begin addr").Open(begin, begin) != 0)
+        return;
 
-      clock.Restart();
+      if (Keyboard("End addr").Open(end, end) != 0)
+        return;
 
-      screen.DrawRect(win_posX + 1, win_posY + 1, win_width - 10,
-                      win_height - 10, Color::Black);
+      if (begin >= end) {
+        MessageBox(
+          "Invalid range, end-address must bigger than "
+          "begin-address.")();
 
-      screen.DrawSysfont("Searching...", win_posX + 8, win_posY + 8);
+        return;
+      }
 
-      screen.DrawSysfont(Utils::Format("Now=%X", addr), win_posX + 8,
-                         win_posY + 30);
+      if (Keyboard("Target addr").Open(target, target) != 0)
+        return;
 
-      screen.DrawSysfont(
-        Utils::Format("Found: %d/%d", result.size(), range),
-        win_posX + 8, win_posY + 46);
+      auto const& screen = OSD::GetTopScreen();
 
-      screen.DrawSysfont("(Hold B to cancel)", win_posX + 8,
-                         win_posY + 68);
+      result.clear();
 
-      OSD::SwapBuffers();
+      Clock clock;
 
-      Sleep(Milliseconds(16));
-      // }
+      u32 const range = end - begin;
+      u32 tmp = 0;
+
+      for (u32 offset = 0, addr = begin; addr <= end; addr += 4) {
+        constexpr int win_width = 240;
+        constexpr int win_height = 100;
+        constexpr int win_posX = (400 - win_width) / 2;
+        constexpr int win_posY = (240 - win_height) / 2;
+        constexpr int drawMilliseconds = 100;
+
+        offset = ((target - addr - 8) >> 2) & 0xFFFFFF;
+
+        Controller::Update();
+
+        if (Controller::IsKeysDown(Key::B))
+          break;
+
+        if (Process::Read32(addr, tmp) &&
+            tmp == (0xEB << 24) | offset) {
+          result.emplace_back(Item{addr, offset});
+        }
+
+        if (clock.HasTimePassed(Milliseconds(drawMilliseconds))) {
+          clock.Restart();
+
+          screen.DrawRect(win_posX + 1, win_posY + 1, win_width - 10,
+                          win_height - 10, Color::Black);
+
+          screen.DrawSysfont("Searching...", win_posX + 8,
+                             win_posY + 8);
+
+          screen.DrawSysfont(Utils::Format("Now=%X", addr),
+                             win_posX + 8, win_posY + 30);
+
+          screen.DrawSysfont(
+            Utils::Format("Found: %d/%d", result.size(), range),
+            win_posX + 8, win_posY + 46);
+
+          screen.DrawSysfont("(Hold B to cancel)", win_posX + 8,
+                             win_posY + 68);
+        }
+
+        OSD::SwapBuffers();
+        Sleep(Milliseconds(1));
+      }
+
+      if (result.empty()) {
+        MessageBox("Not found.")();
+      }
+      else {
+        MessageBox(Utils::Format("%d found.", result.size()))();
+      }
     }
 
-    if (result.empty()) {
-      MessageBox("Not found.")();
-    }
-    else {
-      MessageBox(Utils::Format("%d found.", result.size()))();
-    }
-  }
+    if (choice == 1) {
+      if (result.empty()) {
+        MessageBox("No results.")();
+        return;
+      }
 
-  if (choice == 1) {
-    if (result.empty()) {
-      MessageBox("No results.")();
-      return;
+      std::vector<std::string> vec;
+
+      for (auto&& item : result) {
+        vec.emplace_back(
+          Utils::Format("%06X: %08X", item.addr, *(u32*)item.addr));
+      }
+
+      OSDMenu(
+        Utils::Format("Found instructions (target=%08X)", target),
+        std::move(vec))
+        .open();
     }
-
-    std::vector<std::string> vec;
-
-    for (auto&& item : result) {
-      vec.emplace_back(
-        Utils::Format("%06X: %08X", item.addr, *(u32*)item.addr));
-    }
-
-    OSDMenu(Utils::Format("Found instructions (target=%08X)", target),
-            std::move(vec))
-      .open();
   }
 }
 
@@ -378,7 +448,7 @@ void InitMenu(PluginMenu& menu)
   *tools += new MenuEntry("Pointer Viewer", PointerViewer);
 
   *tools +=
-    new MenuEntry("Search branch instruction", nullptr, SearchBranch);
+    new MenuEntry("Search Instruction", nullptr, SearchInstruction);
 
   menu += tools;
 }

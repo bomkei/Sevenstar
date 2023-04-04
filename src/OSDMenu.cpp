@@ -43,7 +43,7 @@ int OSDMenu::open(bool useTopScreen, bool overlay)
     constexpr int height = 10;
     constexpr int titleHeight = 12;
     constexpr int max = (win_height - titleHeight) / height;
-    constexpr int firstdy = win_posY + titleHeight;
+    constexpr int firstdy = win_posY + titleHeight + 1;
 
     if (!screen.IsTop)
       return false;
@@ -54,9 +54,6 @@ int OSDMenu::open(bool useTopScreen, bool overlay)
     screen.DrawRect(win_posX, win_posY, win_width, win_height,
                     Color::Black);
 
-    // screen.DrawRect(win_posX, win_posY, win_width, win_height,
-    //                 Color::White, false);
-
     // title-text
     screen.Draw(inst.title, win_posX, win_posY);
 
@@ -64,20 +61,18 @@ int OSDMenu::open(bool useTopScreen, bool overlay)
     screen.DrawRect(win_posX + 4, win_posY + titleHeight, 100, 1,
                     Color::White);
 
-    u32 start = std::max<int>(0, (int)index + max - 4);
+    u32 const start = std::max<int>(0, (int)index + max - 4);
     u32 const end = std::min<int>(inst.entries.size(), start + max);
 
-    u32 dy = firstdy + 1;
+    u32 dy = firstdy;
 
-    if (start <= index && index < end) {
-      screen.DrawRect(win_posX + 1, dy + (index - start + 1) * height,
-                      (inst.entries[index].length() + 1) * 8, 1,
-                      Color::Green);
+    for (u32 i = start; i < end; i++, dy += height) {
+      screen.Draw(inst.entries[i], win_posX, dy);
     }
 
-    for (; start < end; start++, dy += height) {
-      screen.Draw(inst.entries[start], win_posX, dy);
-    }
+    screen.DrawRect(
+      win_posX + 1, firstdy + (index - start + 1) * height,
+      (inst.entries[index].length() + 1) * 8, 1, Color::Green);
 
     return true;
   };
@@ -144,6 +139,8 @@ int OSDMenu::open(bool useTopScreen, bool overlay)
     OSD::Stop(drawer);
   }
   else {
+    OSD::SwapBuffers();
+
     if (!isPaused)
       Process::Play();
   }
